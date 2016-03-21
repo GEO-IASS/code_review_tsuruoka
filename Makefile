@@ -5,9 +5,9 @@ OBJS = maxent.o lbfgs.o owlqn.o sgd.o
 all: bicycle postagging
 
 bicycle: bicycle.o $(OBJS)
-	g++ -o bicycle $(CFLAGS) $(OBJS) bicycle.o
+	g++ -o main.o $(CFLAGS) $(OBJS) bicycle.o 
 postagging: postagging.o $(OBJS)
-	g++ -o postagging $(CFLAGS) $(OBJS) postagging.o
+	g++ -o main_postaggin.o $(CFLAGS) $(OBJS) postagging.o
 clean:
 	/bin/rm -r -f $(OBJS) bicycle postagging *.o *~ model
 .cpp.o:

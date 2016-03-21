@@ -1,5 +1,6 @@
 #include "maxent.h"
 #include <cmath>
+#include <stdio.h>
 
 using namespace std;
 

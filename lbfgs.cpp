@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <stdio.h>
 #include "mathvec.h"
 #include "lbfgs.h"
 #include "maxent.h"
