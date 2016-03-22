@@ -6,3 +6,9 @@
 
 #### project ####
 model
+
+#### documentation ####
+*.svg
+resources/*.xml
+resources/*.pdf
+README.pdf
