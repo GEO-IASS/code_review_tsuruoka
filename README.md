@@ -14,7 +14,7 @@ This article is divided in three parts:
  - Optimization methods
  - Postagging example
 
- Before digging ahead, let's get an overview of the code base.
+Before digging ahead, let's get an overview of the code base.
 
 
 ## Overview
@@ -38,10 +38,45 @@ Two __classification examples__ are proposed:
  - `bicycle.cpp`: binary classification between cars and bicycles given simple features. This example is made to just figure out the basic principles;
  - `postaggin.cpp`: the classic task which aims at identifying the right part-of-speech (POS) for a given token. A little dataset of 200 sentences is given to train and test new models;
 
+### A word about `mathvec.h`
 
-The `mathvec.h` is a data structure which extends the possibilities of `std::vector<double>`:  the operators (e.g. `<<`, binary `+`, etc.) are overloaded and some facilities are in place for computing dot product and vector projection. Those elements are extensively used in `lbfgs.cpp`, `owlqn.cpp` and `maxent.h`.
+The `mathvec.h` describes the class `Vec` which extends the possibilities of `vector<double>`:  the operators (e.g. `<<`, binary `+`, etc.) are overloaded and some facilities are in place for computing the dot product and the vector projection. Those elements are extensively used in `lbfgs.cpp`, `owlqn.cpp` and `maxent.h`.
 
+In this case, the optimization aspect is taken into account. For instance, the dot production function is [inlined](https://en.wikipedia.org/wiki/Inline_function), in order to save CPU registers and increase the efficience of operation.
 
+```C++
+inline double dot_product(const Vec & a, const Vec & b)
+{
+  double sum = 0;
+  for (size_t i = 0; i < a.Size(); i++) {
+    sum += a[i] * b[i];
+  }
+  return sum;
+}
+```
+
+### A word about `ext/hash_map`
+
+By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History), with `hash_set`, `hash_multimap` and `hash_multiset`. However, this is now outdated and kept for only for historical reasons. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
+
+```C++
+#define USE_HASH_MAP  // if you encounter errors with hash, try commenting out this line.  (the program will be a bit slower, though)
+#ifdef USE_HASH_MAP
+#include <ext/hash_map>
+#endif
+```
+
+The comments indicates that the program will be a bit slower. This is expected since the standard library container `map`, which ordered its keys, will be used in place of `ext/hash_map`. 
+
+```C++
+#ifdef USE_HASH_MAP
+    typedef __gnu_cxx::hash_map<unsigned int, int> map_type;
+#else    
+    typedef std::map<unsigned int, int> map_type;
+#endif
+```
+
+A good alternative would be to use an [unordered_map](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29). The C++ Technical Report 1 ([TR1](https://en.wikipedia.org/wiki/C%2B%2B_Technical_Report_1)), whose improvements contributed to C++11, suggests that way. For those interested in obtaining further information, please refer the following blog entry: [Hash Table Performance Tests](http://preshing.com/20110603/hash-table-performance-tests/).
 
 
 ## The core

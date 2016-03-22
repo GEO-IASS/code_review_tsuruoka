@@ -11,4 +11,5 @@ model
 *.svg
 resources/*.xml
 resources/*.pdf
+resources/*.cpp
 README.pdf
