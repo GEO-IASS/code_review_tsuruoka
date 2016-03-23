@@ -115,9 +115,20 @@ private:
     std::vector<int> positive_features;
     std::vector<std::pair<int, double> > rvfeatures;
     std::vector<double> ref_pd; // reference probability distribution
+
+    // Overloading of Less Than operator in a member function of Sample
     bool operator<(const Sample & x) const {
+        /*
+         * Can say if a sample A is 'less than' another sample B
+         *
+         * If the sample B has a greater number of positive features
+         * then A is 
+         *     
+         */
+        std::cout << "Track";
       for (unsigned int i = 0; i < positive_features.size(); i++) {
         if (i >= x.positive_features.size()) return false;
+
         int v0 = positive_features[i];
         int v1 = x.positive_features[i];
         if (v0 < v1) return true;

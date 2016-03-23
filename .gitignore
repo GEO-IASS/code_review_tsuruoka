@@ -3,6 +3,7 @@
 *.gch
 *.out
 *.o
+tags
 
 #### project ####
 model
@@ -12,4 +13,5 @@ model
 resources/*.xml
 resources/*.pdf
 resources/*.cpp
+resources/*.txt
 README.pdf

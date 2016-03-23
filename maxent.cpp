@@ -283,8 +283,8 @@ ME_Model::add_training_sample(const ME_Sample & mes)
     s.rvfeatures.push_back(pair<int, double>(_featurename_bag.Put(j->first), j->second));
   }
   if (_ref_modelp != NULL) {
-    ME_Sample tmp = mes;;
-    s.ref_pd = _ref_modelp->classify(tmp);
+    ME_Sample tmp = mes;; // CR: typo
+    s.ref_pd = _ref_modelp->classify(tmp); // Why do that?
   }
   //  cout << s.label << "\t";
   //  for (vector<int>::const_iterator j = s.positive_features.begin(); j != s.positive_features.end(); j++){
@@ -338,7 +338,7 @@ ME_Model::train()
     _vs.pop_back();
   }
 
-  sort(_vs.begin(), _vs.end());
+  sort(_vs.begin(), _vs.end()); // why sort Samples? There is an improvement?
 
   int cutoff = 0;
   if (cutoff > 0) cerr << "cutoff threshold = " << cutoff << endl;
@@ -380,7 +380,7 @@ ME_Model::train()
     _vee[i] /= _vs.size();
   }
   cerr << "done" << endl;
-  
+
   _vl.resize(_fb.Size());
   for (int i = 0; i < _fb.Size(); i++) _vl[i] = 0.0;
 
