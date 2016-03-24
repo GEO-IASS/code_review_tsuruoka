@@ -55,9 +55,31 @@ inline double dot_product(const Vec & a, const Vec & b)
 }
 ```
 
+
+
+
+## The core
+
+The class `ME_Model` is the core of the library. This is reflected in the space  that class takes in `maxent.h` (about 80% of the written source code). A couple of nested structures are defined inside `ME_Model`. Note that nesting does not imply other relations than a shared scope for the nested structures. Inheritance or composition are not involved, unless they are explicitly stated. The following figure gives an insight about the global architecture:
+
+![maxent.h](./resources/maxent_h.png)
+
+
+### `ME_Sample` and  `Sample`
+The structure `ME_Sample` records the samples. Each sample keeps a record of its features. There are two kinds of features: discrete and real-valued features. The set of discrete features is `vector<string>`, whereas the real-valued features are pairs `vector<pair<string, double>>`. A word about that later.
+
+When the `ME_Sample` records are added to the training set, they are transformed in `Sample`: a distinction is made here between the _external observations_ (`ME_Sample`) and the _internal representation of those observations_ (`Sample`), inaccessible outside the `ME_Model`.
+
+Since it's easier to handle integer in place of string, a common trick is to map each string label and each features to an integer identifier using an hash_map
+The structures 
+
+
+
+
+
 ### A word about `ext/hash_map`
 
-By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History), with `hash_set`, `hash_multimap` and `hash_multiset`. However, this is now outdated and kept for only for historical reasons. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
+By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History), with `hash_set`, `hash_multimap` and `hash_multiset`. However, this is now outdated and kept  only for downgraded compatibility. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
 
 ```C++
 #define USE_HASH_MAP  // if you encounter errors with hash, try commenting out this line.  (the program will be a bit slower, though)
@@ -66,7 +88,7 @@ By default, pre-processor instructions in `maxent.h` call the header `ext/hash_m
 #endif
 ```
 
-The comments indicates that the program will be a bit slower. This is expected since the standard library container `map`, which ordered its keys, will be used in place of `ext/hash_map`. 
+The comments indicates that the program will be a bit slower. This is expected since the standard library container `map` orders its keys.
 
 ```C++
 #ifdef USE_HASH_MAP
@@ -76,64 +98,132 @@ The comments indicates that the program will be a bit slower. This is expected s
 #endif
 ```
 
-A good alternative would be to use an [unordered_map](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29). The C++ Technical Report 1 ([TR1](https://en.wikipedia.org/wiki/C%2B%2B_Technical_Report_1)), whose improvements contributed to C++11, suggests that way. For those interested in obtaining further information, please refer the following blog entry: [Hash Table Performance Tests](http://preshing.com/20110603/hash-table-performance-tests/).
+A good alternative would be to use an [unordered_map](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29) (maybe a pull request?). The C++ Technical Report 1 ([TR1](https://en.wikipedia.org/wiki/C%2B%2B_Technical_Report_1)), whose improvements contributed to C++11, suggests that way. If you are interested, check out this article: [Hash Table Performance Tests](http://preshing.com/20110603/hash-table-performance-tests/).
 
 
-## The core
 
+### Objective function
 
-The class `ME_Model` is the core of the library. This is reflected in the space  that class takes in `maxent.h` (about 80% of the written source code). A couple of nested structures are defined inside `ME_Model`. Note that nesting does not imply other relations than a shared scope for the nested structures. Inheritance or composition are not involved, unless they are explicitly stated. In order to access to nested objects, it is necessary to instantiate them inside the stuperstructure. The following figure gives an insight about the architecture of `ME_Model`:
+The objective function, which we want optimize, is a log-likelihood function:
 
+![equation](https://qph.is.quoracdn.net/main-qimg-273326bfff461974edc1802b550b2507?convert_to_webp=true)
 
-![maxent.h](./resources/maxent_h.png)
+In the library, this is done using the following code:
 
+```C++
+    double
+ME_Model::update_model_expectation()
+{
+    double logl = 0;
+    int ncorrect = 0;
 
-The structure `ME_Sample` records the samples. Each sample keeps a record of its features. There are two kinds of features: discrete and real-valued features. The set of discrete features is `vector<string>`, whereas the real-valued features are pairs `vector<pair<string, double>>`.
+    _vme.resize(_fb.Size());
+    for (int i = 0; i < _fb.Size(); i++) _vme[i] = 0;
+
+    int n = 0;
+    for (vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++, n++) {
+        vector<double> membp(_num_classes);
+        int max_label = conditional_probability(*i, membp);
+
+        logl += log(membp[i->label]);
+        //    cout << membp[*i] << " " << logl << " ";
+        if (max_label == i->label) ncorrect++;
+
+        // model_expectation
+        for (vector<int>::const_iterator j = i->positive_features.begin(); j != i->positive_features.end(); j++){
+            for (vector<int>::const_iterator k = _feature2mef[*j].begin(); k != _feature2mef[*j].end(); k++) {
+                _vme[*k] += membp[_fb.Feature(*k).label()];
+            }
+        }
+        for (vector<pair<int, double> >::const_iterator j = i->rvfeatures.begin(); j != i->rvfeatures.end(); j++) {
+            for (vector<int>::const_iterator k = _feature2mef[j->first].begin(); k != _feature2mef[j->first].end(); k++) {
+                _vme[*k] += membp[_fb.Feature(*k).label()] * j->second;
+            }
+        }
+
+    }
+
+    for (int i = 0; i < _fb.Size(); i++) {
+        _vme[i] /= _vs.size();
+    }
+
+    _train_error = 1 - (double)ncorrect / _vs.size();
+
+    logl /= _vs.size();
+
+    if (_l2reg > 0) {
+        const double c = _l2reg;
+        for (int i = 0; i < _fb.Size(); i++) {
+            logl -= _vl[i] * _vl[i] * c;
+        }
+    }
+
+    //logl /= _vs.size();
+
+    //  fprintf(stderr, "iter =%3d  logl = %10.7f  train_acc = %7.5f\n", iter, logl, (double)ncorrect/train.size());
+    //  fprintf(stderr, "logl = %10.7f  train_acc = %7.5f\n", logl, (double)ncorrect/_train.size());
+
+    return logl;
+}
+```
 
 
 ```C++
-struct ME_Sample
+int
+ME_Model::conditional_probability(const Sample & s,
+        std::vector<double> & membp) const
 {
-public:
-  ME_Sample() : label("") {}; // Constructors
-  ME_Sample(const std::string & l) : label(l) {}; // Constructors
-  void set_label(const std::string & l) { label = l; } // Setters
+    //int num_classes = membp.size();
+    double sum = 0;
+    int max_label = -1;
+    //  double maxp = 0;
 
-  // to add a binary feature
-  void add_feature(const std::string & f) {
-    features.push_back(f);   
-  }
+    vector<double> powv(_num_classes, 0.0);
+    for (vector<int>::const_iterator j = s.positive_features.begin(); j != s.positive_features.end(); j++){
+        for (vector<int>::const_iterator k = _feature2mef[*j].begin(); k != _feature2mef[*j].end(); k++) {
+            powv[_fb.Feature(*k).label()] += _vl[*k];
+        }
+    }
+    for (vector<pair<int, double> >::const_iterator j = s.rvfeatures.begin(); j != s.rvfeatures.end(); j++) {
+        for (vector<int>::const_iterator k = _feature2mef[j->first].begin(); k != _feature2mef[j->first].end(); k++) {
+            powv[_fb.Feature(*k).label()] += _vl[*k] * j->second;
+        }
+    }
 
-  // to add a real-valued feature
-  void add_feature(const std::string & s, const double d) {
-    rvfeatures.push_back(std::pair<std::string, double>(s, d)); 
-  }
-
-public:
-  std::string label;
-  std::vector<std::string> features;
-  std::vector<std::pair<std::string, double> > rvfeatures;
-
-  // obsolete
-  void add_feature(const std::pair<std::string, double> & f) {  
-    rvfeatures.push_back(f); // real-valued features
-  }
-};
+    std::vector<double>::const_iterator pmax = max_element(powv.begin(), powv.end());
+    double offset = max(0.0, *pmax - 700); // to avoid overflow
+    for (int label = 0; label < _num_classes; label++) {
+        double pow = powv[label] - offset;
+        double prod = exp(pow);
+        //      cout << pow << " " << prod << ", ";
+        //      if (_ref_modelp != NULL) prod *= _train_refpd[n][label];
+        if (_ref_modelp != NULL) prod *= s.ref_pd[label];
+        assert(prod != 0);
+        membp[label] = prod;
+        sum += prod;
+    }
+    for (int label = 0; label < _num_classes; label++) {
+        membp[label] /= sum;
+        if (membp[label] > membp[max_label]) max_label = label;
+    }
+    assert(max_label >= 0);
+    return max_label;
+}
 ```
 
 
 
-<!--### Features-->
 
 
 
 
-<!--## Optimization methods-->
+## Optimization methods
+
+By default, this library use 'LBFGS' to optimize the objective.
 
 
 
-
-<!--## POSTagging-->
+## Example of postagging
 
 
 

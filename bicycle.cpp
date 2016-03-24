@@ -52,7 +52,7 @@ int main()
     ME_Sample s;
     s.add_feature("two wheels");
     s.add_feature("blue");
-    s.add_feature("length", 1.8);
+    s.add_feature("length", 1.1);
 
     model.classify(s);
     cout << endl;
@@ -69,6 +69,7 @@ int main()
     model.save_to_file("model");
     // You can, of course, load a model from a file.
     // Try replacing train_the_model_with_samples() with model.load_from_file("model").
+
 
     // If you want to see the weights of the features,
     list< pair< pair<string, string>, double > > fl;

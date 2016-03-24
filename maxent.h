@@ -84,14 +84,14 @@ public:
     SGD_ITER = iter; SGD_ETA0 = eta0; SGD_ALPHA = alpha;
   }
   bool load_from_array(const ME_Model_Data data[]);
-  void set_reference_model(const ME_Model & ref_model) { _ref_modelp = &ref_model; };
+  void set_reference_model(const ME_Model & ref_model) { _ref_modelp = &ref_model; }; // Set a new model through the ptr
   void clear();
 
   ME_Model() {
     _l1reg = _l2reg = 0;
     _nheldout = 0;
     _early_stopping_n = 0;
-    _ref_modelp = NULL;
+    _ref_modelp = NULL; // By default, _ref_modelp is NULL
     _optimization_method = LBFGS;
   }
 
@@ -116,19 +116,14 @@ private:
     std::vector<std::pair<int, double> > rvfeatures;
     std::vector<double> ref_pd; // reference probability distribution
 
-    // Overloading of Less Than operator in a member function of Sample
+    // Overloading of Less Than operator for Sample
+    // Used in sort function
+    // Question: there is an improvement in sorting the samples
+    // before the training? Need to be evaluated.
     bool operator<(const Sample & x) const {
-        /*
-         * Can say if a sample A is 'less than' another sample B
-         *
-         * If the sample B has a greater number of positive features
-         * then A is 
-         *     
-         */
         std::cout << "Track";
       for (unsigned int i = 0; i < positive_features.size(); i++) {
         if (i >= x.positive_features.size()) return false;
-
         int v0 = positive_features[i];
         int v1 = x.positive_features[i];
         if (v0 < v1) return true;
@@ -181,6 +176,8 @@ private:
     int Id(const ME_Feature & i) const {
       map_type::const_iterator j = mef2id.find(i.body());
       if (j == mef2id.end()) {
+          // Instance of feature that was not seen during the training
+          // So, the id function returns a negative number
         return -1;
       }
       return j->second;
@@ -287,7 +284,7 @@ private:
   int _nheldout;
   int _early_stopping_n;
   std::vector<double> _vhlogl;
-  const ME_Model * _ref_modelp;
+  const ME_Model * _ref_modelp; // Why a pointer on another model?
 
   double heldout_likelihood();
   int conditional_probability(const Sample & nbs, std::vector<double> & membp) const;
