@@ -269,8 +269,8 @@ ME_Model::train(const vector<ME_Sample> & vms)
 
 void ME_Model::add_training_sample(const ME_Sample & mes) {
 
-    Sample s;
-    s.label = _label_bag.Put(mes.label);
+    Sample s; // Create a sample S
+    s.label = _label_bag.Put(mes.label);  // 
     if (s.label > ME_Feature::MAX_LABEL_TYPES) {
         cerr << "error: too many types of labels." << endl;
         exit(1);

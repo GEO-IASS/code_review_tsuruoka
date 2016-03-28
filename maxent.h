@@ -14,6 +14,7 @@
 #include <string>
 #include <cassert>
 #include "mathvec.h"
+#include <bitset>
 
 #define USE_HASH_MAP  // if you encounter errors with hash, try commenting out this line. (the program will be a bit slower, though)
 #ifdef USE_HASH_MAP
@@ -148,7 +149,8 @@ private:
       assert(f >= 0 && f <= 0xffffff);
     };
     int label() const { return _body & 0xff; }
-    int feature() const { return _body >> 8; }
+    int feature() const { return _body >> 8; } // bitwise operator
+    // Is like to make some unsigned int /= 8
     unsigned int body() const { return _body; }
   private:
     unsigned int _body;
@@ -198,8 +200,16 @@ private:
   struct hashfun_str
   {
     size_t operator()(const std::string& s) const {
-      assert(sizeof(int) == 4 && sizeof(char) == 1);
-      const int* p = reinterpret_cast<const int*>(s.c_str());
+      assert(sizeof(int) == 4 && sizeof(char) == 1); // See if system is ok
+      /* 
+       * get C-style array of string
+       * Returns a pointer to an array that contains a null-terminated
+       * sequence of characters. Originally, the type of pointer is char*
+       * and 
+       *
+       */
+      std::cout << "s:" << s << std::endl; // s is label and feature.
+      const int* p = reinterpret_cast<const int*>(s.c_str()); 
       size_t v = 0;
       int n = s.size() / 4;
       for (int i = 0; i < n; i++, p++) {
@@ -210,6 +220,7 @@ private:
       for (int i = 0; i < m; i++) {
         v ^= s[4 * n + i] << (i * 8);
       }
+      std::cout << "size of " << s << " is " << v << std::endl;
       return v;
     }
   };

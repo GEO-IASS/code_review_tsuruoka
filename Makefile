@@ -2,7 +2,7 @@ CFLAGS = -O2 -Wall -DNDEBUG
 #CFLAGS = -g -Wall
 OBJS = maxent.o lbfgs.o owlqn.o sgd.o
 
-all: bicycle postagging
+all: clean bicycle postagging
 
 bicycle: bicycle.o $(OBJS)
 	g++ -o main.o $(CFLAGS) $(OBJS) bicycle.o 

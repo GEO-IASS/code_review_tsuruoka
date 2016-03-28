@@ -13,5 +13,6 @@ model
 resources/*.xml
 resources/*.pdf
 resources/*.cpp
+resources/*.h
 resources/*.txt
 README.pdf
