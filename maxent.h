@@ -200,15 +200,7 @@ private:
   struct hashfun_str
   {
     size_t operator()(const std::string& s) const {
-      assert(sizeof(int) == 4 && sizeof(char) == 1); // See if system is ok
-      /* 
-       * get C-style array of string
-       * Returns a pointer to an array that contains a null-terminated
-       * sequence of characters. Originally, the type of pointer is char*
-       * and 
-       *
-       */
-      std::cout << "s:" << s << std::endl; // s is label and feature.
+      assert(sizeof(int) == 4 && sizeof(char) == 1); 
       const int* p = reinterpret_cast<const int*>(s.c_str()); 
       size_t v = 0;
       int n = s.size() / 4;
@@ -220,7 +212,6 @@ private:
       for (int i = 0; i < m; i++) {
         v ^= s[4 * n + i] << (i * 8);
       }
-      std::cout << "size of " << s << " is " << v << std::endl;
       return v;
     }
   };

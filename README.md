@@ -124,13 +124,22 @@ By default, the `ext/hash_map` implementation cannot deal with string keys. This
   };
 ```
 
-As we can read into the Third References of C++:
+As we can read into (Stroupstrup, 1997):
 
 > An object of a class with an application operator (§11.9) is called a _function-like object_, a _functor_ or simply a _function object_.
 (18.4, Stroupstrup, 1997)
 
 
-Indeed, since this `hash_map` implementation does not belong into the standard STL, some basic functionalities need to be implemented. One of those things, is the possibility to use `string keys`
+The hash function proposed in this structure uses some low-level bitwise operations to propose a hash. However, we can see that some collisions are possible.
+
+```C++
+    typedef __gnu_cxx::hash_map<std::string, int, hashfun_str> map_type;
+    map_type str2id;
+
+    std::string str_a = "zzzzzzzzzzzzzzzz ";
+
+```
+
 
 
 
