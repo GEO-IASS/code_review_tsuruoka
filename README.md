@@ -101,7 +101,11 @@ The structure `hashfun_str` is used for the definition of  `ext/hash_map` into t
 #endif
 ```
 
-By default, the `ext/hash_map` implementation cannot deal with string keys. This is partly because this hash_map is not a part of the standard library. Thus, in order to records labels and features as keys, it is necessary to give a hash function to handle the string. This is the goal of the `hashfun_str` structure, which overloads the application operator `()`:
+By default, the `ext/hash_map` implementation cannot deal with string keys. This is partly because this hash_map is not a part of the standard library. Thus, in order to records labels and features as keys, it is necessary to give a hash function to handle the string. This is the goal of the `hashfun_str` structure which is an function object. As we can read into (Stroupstrup, 1997):
+
+> An object of a class with an application operator (§11.9) is called a _function-like object_, a _functor_ or simply a _function object_.
+(18.4, Stroupstrup, 1997)
+
 
 ```C++
   struct hashfun_str
@@ -124,22 +128,21 @@ By default, the `ext/hash_map` implementation cannot deal with string keys. This
   };
 ```
 
-As we can read into (Stroupstrup, 1997):
-
-> An object of a class with an application operator (§11.9) is called a _function-like object_, a _functor_ or simply a _function object_.
-(18.4, Stroupstrup, 1997)
 
 
-The hash function proposed in this structure uses some low-level bitwise operations to propose a hash. However, we can see that some collisions are possible.
+The hash function proposed in this structure uses extensively low-level bitwise operations to generate the hash value. However, I'm a little bit confused by this function. There is an assumption about the `int` representation. Secondly, I figured out that it is not hard to create intentionally collisions, simply overflowing a `size_t`:
 
 ```C++
     typedef __gnu_cxx::hash_map<std::string, int, hashfun_str> map_type;
     map_type str2id;
-
-    std::string str_a = "zzzzzzzzzzzzzzzz ";
-
+    
+    /* 
+     * Exemple of collision :
+     * "zzzzzzzzzzzzzzzzABC" and "ABC" have the same hash value
+     */
+    str2id["zzzzzzzzzzzzzzzzABC"];
+    str2id["ABC"];
 ```
-
 
 
 
@@ -255,5 +258,9 @@ By default, this library use 'LBFGS' to optimize the objective.
 ## Example of postagging
 
 
+## References
+
+
+ - Stroustrup, B. (1997). The C++ Programming Language. Third edition. Pearson Education India.
 
 

@@ -10,8 +10,6 @@
 #include <ext/hash_map>
 #include <string>
 #include <bitset>
-using namespace std;
-
 
 
 //http://stackoverflow.com/questions/440133/how-do-i-create-a-random-alpha-numeric-string-in-c
@@ -49,7 +47,6 @@ uint64 GetTimeMs64(){
 struct hashfun_str {
     size_t operator()(const std::string& s) const {
         assert(sizeof(int) == 4 && sizeof(char) == 1); 
-        std::cout << "Call hashfun_str" << std::endl;
         const int* p = reinterpret_cast<const int*>(s.c_str()); 
         size_t v = 0;
         int n = s.size() / 4;
@@ -73,34 +70,38 @@ int main(){
     typedef __gnu_cxx::hash_map<std::string, int, hashfun_str> map_type;
     map_type str2id;
 
+    uint64 tick_time[100];
+    int tick_string[100];
+    int j = 0;
+
 
     uint64 start = GetTimeMs64();
-    for(int i=0; i < 30000; i++){
+    for(int i=1; i <= 5000000; i++){
+    
         char random_str [15] = "";
         gen_random(random_str, 15);
         std::string random_str_cpp(random_str);
         str2id[random_str] = rand() % 2; // could be another number
+
+        // record time
+        if(!(i % 50000)){
+            uint64 end = GetTimeMs64();
+            uint64 current_time = (end - start);
+            tick_time[j] = current_time;
+            tick_string[j] = i;
+            j++;
+        }
+
     }
     uint64 end = GetTimeMs64();
     uint64 current_time = (end - start);
-    std::cout << "Time : " << current_time << std::endl;
+    std::cout << "Total Time: " << current_time << std::endl;
+    std::cout << "Size: " << str2id.size() << std::endl;
+    std::cout << "Benchmark" << std::endl;
 
-
-    std::cout << str2id.size();
-
-    //map_type::iterator it;
-    //std::cout << std::endl;
-    //for(it = str2id.begin(); it!= str2id.end(); it++){
-        //std::cout << "#iterator:#" << it->first << "-" << it->second << std::endl;
-    //}
-
-
-
-    //map_type::const_iterator j = str2id.find(mystring); // find returns an iterator 
-    //// pas trouvé
-    //if(j == str2id.end()){
-    //std::cout << "Pas trouvé " << mystring << std::endl;    
-    //}
+    for(int i=0; i < 100; i++){
+        std::cout << tick_time[i] << "," << tick_string[i] << std::endl;
+    }
 
 
     return 0;
