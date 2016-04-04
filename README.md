@@ -77,7 +77,7 @@ During this transformation, since it's easier to handle integers in place of str
 
 ### Hash implementation
 
-By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History), with `hash_set`, `hash_multimap` and `hash_multiset`. However, this is now outdated and kept  only for downgraded compatibility. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
+By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History). However, this is now depriciated. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
 
 ```C++
 #define USE_HASH_MAP  // if you encounter errors with hash, try commenting out this line.  (the program will be a bit slower, though)
@@ -86,12 +86,7 @@ By default, pre-processor instructions in `maxent.h` call the header `ext/hash_m
 #endif
 ```
 
-As the comments indicate,  the program will be a bit slower. This is expected since the standard library container `map` orders its keys. A good alternative would be to use an [unordered_map](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29) (maybe a pull request?). The C++ Technical Report 1 ([TR1](https://en.wikipedia.org/wiki/C%2B%2B_Technical_Report_1)), whose improvements contributed to C++11, suggests that way. If you are interested, check out this article: [Hash Table Performance Tests](http://preshing.com/20110603/hash-table-performance-tests/).
-
-
-### hashfun_str
-
-The structure `hashfun_str` is used for the definition of  `ext/hash_map` into the scope of `MiniStringBag`.
+As the comments indicate,  the program will be a bit slower. This is expected since the standard library container `map` orders its keys. A better alternative would be to use an [unordered_map](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29). Therefore, a custom hash function is provided and allows to obtain significant speed improvements (even over the C++11 `unordered_map`). The structure `hashfun_str` is used for this definition, into the scope of `MiniStringBag`.
 
 ```C++
 #ifdef USE_HASH_MAP
@@ -128,9 +123,7 @@ By default, the `ext/hash_map` implementation cannot deal with string keys. This
   };
 ```
 
-
-
-The hash function proposed in this structure uses extensively low-level bitwise operations to generate the hash value. Using this it's possible to obtain significant speed improvements (see benchmark directory).
+As we can see, this hash function uses extensively low-level bitwise operations, in order to obtain significant speed improvements (see benchmark directory).
 
 
 
