@@ -130,20 +130,7 @@ By default, the `ext/hash_map` implementation cannot deal with string keys. This
 
 
 
-The hash function proposed in this structure uses extensively low-level bitwise operations to generate the hash value. However, I'm a little bit confused by this function. There is an assumption about the `int` representation. Secondly, I figured out that it is not hard to create intentionally collisions, simply overflowing a `size_t`:
-
-```C++
-    typedef __gnu_cxx::hash_map<std::string, int, hashfun_str> map_type;
-    map_type str2id;
-    
-    /* 
-     * Exemple of collision :
-     * "zzzzzzzzzzzzzzzzABC" and "ABC" have the same hash value
-     */
-    str2id["zzzzzzzzzzzzzzzzABC"];
-    str2id["ABC"];
-```
-
+The hash function proposed in this structure uses extensively low-level bitwise operations to generate the hash value. Using this it's possible to obtain significant speed improvements (see benchmark directory).
 
 
 

@@ -1,5 +1,5 @@
 /*
- * Simple benchmark to compare different hash table implementations
+ * Simple benchmark to compare gnu+custom hash function and C11 hash table implementations
  * 
  */
 
@@ -10,7 +10,16 @@
 #include <ext/hash_map>
 #include <string>
 #include <bitset>
+#include <unordered_map>
+#include <fstream>
 
+#define USE_HASH_C11
+
+#ifdef USE_HASH_C11
+#define OUTPUT  std::string("hashc11.csv")
+#else
+#define OUTPUT  std::string("hashfun_str.csv")
+#endif
 
 //http://stackoverflow.com/questions/440133/how-do-i-create-a-random-alpha-numeric-string-in-c
 void gen_random(char *s, const int len) {
@@ -44,6 +53,7 @@ uint64 GetTimeMs64(){
     return ret;
 }
 
+// http://www.logos.ic.i.u-tokyo.ac.jp/~tsuruoka/maxent/ -- maxent.h
 struct hashfun_str {
     size_t operator()(const std::string& s) const {
         assert(sizeof(int) == 4 && sizeof(char) == 1); 
@@ -63,19 +73,26 @@ struct hashfun_str {
 };
 
 
-int main(){
 
+int main(){
     srand(time(NULL));
 
+    #ifdef USE_HASH_C11
+    typedef std::unordered_map<std::string, int, hashfun_str> map_type;
+    #else
     typedef __gnu_cxx::hash_map<std::string, int, hashfun_str> map_type;
+    #endif
+    std::ofstream csv_file;
+    csv_file.open(OUTPUT);
+
     map_type str2id;
 
     uint64 tick_time[100];
     int tick_string[100];
     int j = 0;
 
-
     uint64 start = GetTimeMs64();
+
     for(int i=1; i <= 5000000; i++){
     
         char random_str [15] = "";
@@ -93,16 +110,12 @@ int main(){
         }
 
     }
-    uint64 end = GetTimeMs64();
-    uint64 current_time = (end - start);
-    std::cout << "Total Time: " << current_time << std::endl;
-    std::cout << "Size: " << str2id.size() << std::endl;
-    std::cout << "Benchmark" << std::endl;
 
-    for(int i=0; i < 100; i++){
-        std::cout << tick_time[i] << "," << tick_string[i] << std::endl;
-    }
+    csv_file << "ms" << "," << "nb_string" << std::endl;
+    for(int i=0; i < 100; i++)
+        csv_file << tick_time[i] << "," << tick_string[i] << std::endl;
 
+    csv_file.close();
 
     return 0;
 }
