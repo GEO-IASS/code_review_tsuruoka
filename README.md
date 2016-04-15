@@ -15,7 +15,6 @@ This article is divided in three parts:
 
 But, before digging ahead, let's get an overview of the code base.
 
-
 ### Overview
 
 Using [Rexdep](https://github.com/itchyny/rexdep), we can obtain the following directed graph of dependencies:
@@ -77,7 +76,7 @@ During this transformation, since it's easier to handle integers in place of str
 
 ### Hash implementation
 
-By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History). However, this is now depriciated. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
+By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History). However, this is now depreciated. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
 
 ```C++
 #define USE_HASH_MAP  // if you encounter errors with hash, try commenting out this line.  (the program will be a bit slower, though)
@@ -111,7 +110,6 @@ By default, the `ext/hash_map` implementation cannot deal with string keys. This
       size_t v = 0;
       int n = s.size() / 4;
       for (int i = 0; i < n; i++, p++) {
-        //      v ^= *p;
         v ^= *p << (4 * (i % 2)); // note) 0 <= char < 128
       }
       int m = s.size() % 4;
@@ -123,75 +121,56 @@ By default, the `ext/hash_map` implementation cannot deal with string keys. This
   };
 ```
 
-As we can see, this hash function uses extensively low-level bitwise operations, in order to obtain significant speed improvements (see benchmark directory).
+As we can see, this hash function uses extensively low-level bitwise operations, in order to obtain significant speed improvements (see benchmark directory). This can done since it's possible to have some insights about the data.
+
+
+### Constituting the training set
+
+The function `add_training_sample(const ME_Sample & mes)` transforms a `ME_Sample` into a `Sample`. The samples are, internally to each model, stored into a  vector of training samples (`std::vector<Sample>`). The string representing the feature of the `ME_Sample` are transformed into their corresponding integer.
 
 
 
-### Adding a sample to the training set
+### Example
 
-The function `add_training_sample(const ME_Sample & mes)`
-
+We can imagine a simple example.
 
 ```C++
-void ME_Model::add_training_sample(const ME_Sample & mes) {
+    ME_Sample s1("CLASS_A");
+    s1.add_feature("x1");             
+    s1.add_feature("x2"); 
+    s1.add_feature("x3", 4.0);  
 
-    Sample s;
-    s.label = _label_bag.Put(mes.label);
-    if (s.label > ME_Feature::MAX_LABEL_TYPES) {
-        cerr << "error: too many types of labels." << endl;
-        exit(1);
-    }
-    for (vector<string>::const_iterator j = mes.features.begin(); j != mes.features.end(); j++) {
-        s.positive_features.push_back(_featurename_bag.Put(*j));
-    }
-    for (vector<pair<string, double> >::const_iterator j = mes.rvfeatures.begin(); j != mes.rvfeatures.end(); j++) {
-        s.rvfeatures.push_back(pair<int, double>(_featurename_bag.Put(j->first), j->second));
-    }
-    std::cout << "ref_model " <<  _ref_modelp << std::endl;
-    if (_ref_modelp != NULL) {
-        ME_Sample tmp = mes;; // Typo: double ';'
-        s.ref_pd = _ref_modelp->classify(tmp); // Why do that?
-    }
-    std::cout << s.label << " ref_pd:" << s.ref_pd.size() << std::endl;
-    //  cout << s.label << "\t";
-    //  for (vector<int>::const_iterator j = s.positive_features.begin(); j != s.positive_features.end(); j++){
-    //    cout << *j << " ";
-    //  }
-    //  cout << endl;
+    ME_Sample s2("CLASS_A");
+    s2.add_feature("x2");             
+    s2.add_feature("x3", 5.0);  
+    s2.add_feature("x4", 1.0); 
 
-    _vs.push_back(s);
-}
+    ME_Sample s3("CLASS_B");
+    s3.add_feature("x1");             
+    s3.add_feature("x3", 1.0);  
+    s3.add_feature("x4", 3.0); 
+
 ```
 
 
-### ME_Feature
 
-The structure `ME_Feature` 
+Our training set has the following form:
+
+| samples | x1  | x2  | x3  | x4  | y       | 
+| ---     | --- | --- | --- | --- | ---     | 
+| s1      | 1   | 1   | 4.0 |     | CLASS_A | 
+| s2      |     | 1   | 5.0 | 1.0 | CLASS_A | 
+| s3      | 1   |     | 1.0 | 3.0 | CLASS_B | 
 
 
-```C++
-  struct ME_Feature
-  {
-    enum { MAX_LABEL_TYPES = 255 };
-      
-    //    ME_Feature(const int l, const int f) : _body((l << 24) + f) {
-    //      assert(l >= 0 && l < 256);
-    //      assert(f >= 0 && f <= 0xffffff);
-    //    };
-    //    int label() const { return _body >> 24; }
-    //    int feature() const { return _body & 0xffffff; }
-    ME_Feature(const int l, const int f) : _body((f << 8) + l) {
-      assert(l >= 0 && l <= MAX_LABEL_TYPES);
-      assert(f >= 0 && f <= 0xffffff);
-    };
-    int label() const { return _body & 0xff; }
-    int feature() const { return _body >> 8; } // bitwise operator
-    // Is like to make some unsigned int /= 8
-    unsigned int body() const { return _body; }
-  private:
-    unsigned int _body;
-  };
-```
+And we have 7 active features:
+
+
+  | classes | x1  | x2  | x3  | x4  | 
+  | ---     | --- | --- | --- | --- | 
+  | CLASS_A | x   | x   | x   | x   | 
+  | CLASS_B | x   |     | x   | x   | 
+
 
 
 

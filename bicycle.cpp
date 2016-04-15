@@ -37,7 +37,7 @@ void train_the_model_with_samples(ME_Model & model)
     model.add_training_sample(s3);
     model.add_training_sample(s4);
 
-    model.use_l1_regularizer(1.0);
+    //model.use_l1_regularizer(1.0);
 
     model.train();
 }

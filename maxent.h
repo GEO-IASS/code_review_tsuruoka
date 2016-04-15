@@ -69,6 +69,7 @@ class ME_Model
 public:
 
   void add_training_sample(const ME_Sample & s);
+  void explore();
   int train();
   std::vector<double> classify(ME_Sample & s) const;
   bool load_from_file(const std::string & filename);
@@ -120,9 +121,8 @@ private:
     // Overloading of Less Than operator for Sample
     // Used in sort function
     // Question: there is an improvement in sorting the samples
-    // before the training? Need to be evaluated.
+    // before the training? 
     bool operator<(const Sample & x) const {
-        std::cout << "Track";
       for (unsigned int i = 0; i < positive_features.size(); i++) {
         if (i >= x.positive_features.size()) return false;
         int v0 = positive_features[i];

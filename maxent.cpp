@@ -146,6 +146,8 @@ ME_Model::make_feature_bag(const int cutoff)
     typedef std::map<unsigned int, int> map_type;
 #endif
     map_type count;
+
+    // If there is a cut-off
     if (cutoff > 0) {
         for (std::vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++) {
             for (std::vector<int>::const_iterator j = i->positive_features.begin(); j != i->positive_features.end(); j++) {
@@ -156,6 +158,8 @@ ME_Model::make_feature_bag(const int cutoff)
             }
         }
     }
+
+
 
     int n = 0; 
     for (std::vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++, n++) {
@@ -270,23 +274,31 @@ ME_Model::train(const vector<ME_Sample> & vms)
 void ME_Model::add_training_sample(const ME_Sample & mes) {
 
     Sample s; // Create a sample S
-    s.label = _label_bag.Put(mes.label);  // 
+
+    s.label = _label_bag.Put(mes.label);  
+
+    // Sanity check
     if (s.label > ME_Feature::MAX_LABEL_TYPES) {
         cerr << "error: too many types of labels." << endl;
         exit(1);
     }
+
+
+
     for (vector<string>::const_iterator j = mes.features.begin(); j != mes.features.end(); j++) {
         s.positive_features.push_back(_featurename_bag.Put(*j));
     }
+
     for (vector<pair<string, double> >::const_iterator j = mes.rvfeatures.begin(); j != mes.rvfeatures.end(); j++) {
         s.rvfeatures.push_back(pair<int, double>(_featurename_bag.Put(j->first), j->second));
     }
-    std::cout << "ref_model " <<  _ref_modelp << std::endl;
+
     if (_ref_modelp != NULL) {
         ME_Sample tmp = mes;; // Typo: double ';'
         s.ref_pd = _ref_modelp->classify(tmp); // Why do that?
     }
-    std::cout << s.label << " ref_pd:" << s.ref_pd.size() << std::endl;
+
+    //std::cout << s.label << " ref_pd:" << s.ref_pd.size() << std::endl;
     //  cout << s.label << "\t";
     //  for (vector<int>::const_iterator j = s.positive_features.begin(); j != s.positive_features.end(); j++){
     //    cout << *j << " ";
@@ -294,6 +306,17 @@ void ME_Model::add_training_sample(const ME_Sample & mes) {
     //  cout << endl;
 
     _vs.push_back(s);
+}
+
+void ME_Model::explore(){
+
+    for (std::vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++) {
+        std::cout <<  i->label << " ";
+        std::cout <<  _label_bag.Str(i->label) << std::endl;
+
+
+        }
+
 }
 
     int
@@ -317,11 +340,16 @@ ME_Model::train()
     for (std::vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++) {
         max_label = max(max_label, i->label);
     }
+
+    std::cout << "Max label = " << max_label << std::endl;
+
+    // Sanity check
     _num_classes = max_label + 1;
     if (_num_classes != _label_bag.Size()) {
         cerr << "warning: _num_class != _label_bag.Size()" << endl;
     }
 
+    // model by ref
     if (_ref_modelp != NULL) {
         cerr << "setting reference distribution...";
         for (int i = 0; i < _ref_modelp->num_classes(); i++) {
@@ -334,14 +362,19 @@ ME_Model::train()
         cerr << "done" << endl;
     }
 
+
+    // By defaut nheldout = 0
     for (int i = 0; i < _nheldout; i++) {
+        std::cout << i << std::endl;
         _heldout.push_back(_vs.back());
         _vs.pop_back();
     }
 
-    sort(_vs.begin(), _vs.end()); // why sort Samples? There is an improvement?
+    // Sorting of samples.
+    // Real improvment?
+    sort(_vs.begin(), _vs.end()); 
 
-    int cutoff = 0;
+    int cutoff = 0; //?
     if (cutoff > 0) cerr << "cutoff threshold = " << cutoff << endl;
     if (_l1reg > 0) cerr << "L1 regularizer = " << _l1reg << endl;
     if (_l2reg > 0) cerr << "L2 regularizer = " << _l2reg << endl;
@@ -353,6 +386,7 @@ ME_Model::train()
     cerr << "preparing for estimation...";
     make_feature_bag(cutoff);
     //  _vs.clear();
+    
     cerr << "done" << endl;
     cerr << "number of samples = " << _vs.size() << endl;
     cerr << "number of features = " << _fb.Size() << endl;
