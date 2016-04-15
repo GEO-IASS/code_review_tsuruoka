@@ -166,10 +166,10 @@ Our training set has the following form:
 And we have 7 active features:
 
 
-  | classes | x1  | x2  | x3  | x4  | 
-  | ---     | --- | --- | --- | --- | 
-  | CLASS_A | x   | x   | x   | x   | 
-  | CLASS_B | x   |     | x   | x   | 
+| classes | x1  | x2  | x3  | x4  | 
+| ---     | --- | --- | --- | --- | 
+| CLASS_A | x   | x   | x   | x   | 
+| CLASS_B | x   |     | x   | x   | 
 
 
 
