@@ -126,8 +126,29 @@ As we can see, this hash function uses extensively low-level bitwise operations,
 
 ### Constituting the training set
 
-The function `add_training_sample(const ME_Sample & mes)` transforms a `ME_Sample` into a `Sample`. The samples are, internally to each model, stored into a  vector of training samples (`std::vector<Sample>`). The string representing the feature of the `ME_Sample` are transformed into their corresponding integer.
+The function `add_training_sample(const ME_Sample & mes)` transforms a `ME_Sample` into a `Sample`. The samples are, internally to each model, stored into a  vector of training samples (`std::vector<Sample> _vs`). The string representing the feature of the `ME_Sample` are transformed into their corresponding integer.
 
+Differents objects are proposed:
+
+```C++
+  std::vector<Sample> _vs; // vector of training_samples
+  StringBag _label_bag;
+  MiniStringBag _featurename_bag;
+  std::vector<double> _vl;  // vector of lambda
+  ME_FeatureBag _fb;
+  int _num_classes;
+  std::vector<double> _vee;  // empirical expectation
+  std::vector<double> _vme;  // empirical expectation
+  std::vector< std::vector< int > > _feature2mef;
+```
+
+
+An active feature is a pair of feature-label identifiers contained in the structure `ME_Feature`. Internally, each one is casted into a single unsigned int.
+The label identifier is stored on the first 8 bits, and the 24 remaining are dedicated to represent the feature identifier. For instance, the `ME_Feature` of the label `3` and the feature `7` is represented as:
+
+`00000000000000000000011100000011`
+
+Then, in this implementation, we can have, at most, 256 labels and 2^24 features.
 
 
 ### Example
@@ -153,14 +174,14 @@ We can imagine a simple example.
 ```
 
 
-
-Our training set has the following form:
+At the beginning, our training set has the following form:
 
 | samples | x1  | x2  | x3  | x4  | y       | 
 | ---     | --- | --- | --- | --- | ---     | 
 | s1      | 1   | 1   | 4.0 |     | CLASS_A | 
 | s2      |     | 1   | 5.0 | 1.0 | CLASS_A | 
 | s3      | 1   |     | 1.0 | 3.0 | CLASS_B | 
+
 
 
 And we have 7 active features:

@@ -136,6 +136,9 @@ private:
 
   struct ME_Feature
   {
+
+      // Limit max label to 255 because they are casted
+      // into a single unsigned int.
     enum { MAX_LABEL_TYPES = 255 };
       
     //    ME_Feature(const int l, const int f) : _body((l << 24) + f) {
@@ -150,7 +153,7 @@ private:
     };
     int label() const { return _body & 0xff; }
     int feature() const { return _body >> 8; } // bitwise operator
-    // Is like to make some unsigned int /= 8
+    // Is like to make unsigned int foo /= 8
     unsigned int body() const { return _body; }
   private:
     unsigned int _body;

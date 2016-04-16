@@ -134,9 +134,7 @@ ME_Model::conditional_probability(const Sample & s,
     return max_label;
 }
 
-    int
-ME_Model::make_feature_bag(const int cutoff)
-{
+int ME_Model::make_feature_bag(const int cutoff) {
     int max_num_features = 0;
 
     // count the occurrences of features
@@ -147,11 +145,14 @@ ME_Model::make_feature_bag(const int cutoff)
 #endif
     map_type count;
 
+    // It is not necessary to use a hash map here
+
+
     // If there is a cut-off
     if (cutoff > 0) {
         for (std::vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++) {
             for (std::vector<int>::const_iterator j = i->positive_features.begin(); j != i->positive_features.end(); j++) {
-                count[ME_Feature(i->label, *j).body()]++;
+                count[ME_Feature(i->label, *j).body()]++; // and after that?
             }
             for (std::vector<pair<int, double> >::const_iterator j = i->rvfeatures.begin(); j != i->rvfeatures.end(); j++) {
                 count[ME_Feature(i->label, j->first).body()]++;
@@ -161,17 +162,25 @@ ME_Model::make_feature_bag(const int cutoff)
 
 
 
+
     int n = 0; 
     for (std::vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++, n++) {
         max_num_features = max(max_num_features, (int)(i->positive_features.size()));
+
+        // each i is a Sample
+
+        // Treat Binary feature
         for (std::vector<int>::const_iterator j = i->positive_features.begin(); j != i->positive_features.end(); j++) {
             const ME_Feature feature(i->label, *j);
+
             //      if (cutoff > 0 && count[feature.body()] < cutoff) continue;
             if (cutoff > 0 && count[feature.body()] <= cutoff) continue;
             _fb.Put(feature);
             //      cout << i->label << "\t" << *j << "\t" << id << endl;
             //      feature2sample[id].push_back(n);
         }
+
+        //  Treat real-valued feature
         for (std::vector<pair<int, double> >::const_iterator j = i->rvfeatures.begin(); j != i->rvfeatures.end(); j++) {
             const ME_Feature feature(i->label, j->first);
             //      if (cutoff > 0 && count[feature.body()] < cutoff) continue;
@@ -181,8 +190,8 @@ ME_Model::make_feature_bag(const int cutoff)
     }
     count.clear();
 
-    //  cerr << "num_classes = " << _num_classes << endl;
-    //  cerr << "max_num_features = " << max_num_features << endl;
+      cerr << "num_classes = " << _num_classes << endl;
+      cerr << "max_num_features of positive features = " << max_num_features << endl;
 
     init_feature2mef();
 
@@ -319,17 +328,21 @@ void ME_Model::explore(){
 
 }
 
-    int
-ME_Model::train()
-{
+int ME_Model::train(){
+
+
+    // Sanity check
     if (_l1reg > 0 && _l2reg > 0) {
         cerr << "error: L1 and L2 regularizers cannot be used simultaneously." << endl;
         return 0;
     }
+
+    // Sanity check
     if (_vs.size() == 0) {
         cerr << "error: no training data." << endl;
         return 0;
     }
+    // Sanity check
     if (_nheldout >= (int)_vs.size()) {
         cerr << "error: too much heldout data. no training data is available." << endl;
         return 0;
@@ -374,6 +387,7 @@ ME_Model::train()
     // Real improvment?
     sort(_vs.begin(), _vs.end()); 
 
+    // Show hyperparameters
     int cutoff = 0; //?
     if (cutoff > 0) cerr << "cutoff threshold = " << cutoff << endl;
     if (_l1reg > 0) cerr << "L1 regularizer = " << _l1reg << endl;
@@ -384,6 +398,8 @@ ME_Model::train()
     _l2reg /= _vs.size();
 
     cerr << "preparing for estimation...";
+
+    // Make the featureSpace
     make_feature_bag(cutoff);
     //  _vs.clear();
     
@@ -391,19 +407,34 @@ ME_Model::train()
     cerr << "number of samples = " << _vs.size() << endl;
     cerr << "number of features = " << _fb.Size() << endl;
 
+
+
+
+    /*
+     * --- Empirical expectation ----------------------------------------------
+     */
     cerr << "calculating empirical expectation...";
-    _vee.resize(_fb.Size());
+    _vee.resize(_fb.Size()); // size of featureBag
     for (int i = 0; i < _fb.Size(); i++) {
-        _vee[i] = 0;
+        _vee[i] = 0; // initilisation of empirical expectation to 0
     }
+
+    // Iteration on the training set (vector of sample).
     for (int n = 0; n < (int)_vs.size(); n++) {
         const Sample * i = &_vs[n];
+
+        // binary features 
         for (vector<int>::const_iterator j = i->positive_features.begin(); j != i->positive_features.end(); j++){
+
             for (vector<int>::const_iterator k = _feature2mef[*j].begin(); k != _feature2mef[*j].end(); k++) {
+
                 if (_fb.Feature(*k).label() == i->label) _vee[*k] += 1.0;
+
             }
         }
 
+
+        // binary features 
         for (vector<pair<int, double> >::const_iterator j = i->rvfeatures.begin(); j != i->rvfeatures.end(); j++) {
             for (vector<int>::const_iterator k = _feature2mef[j->first].begin(); k != _feature2mef[j->first].end(); k++) {
                 if (_fb.Feature(*k).label() == i->label) _vee[*k] += j->second;
@@ -411,26 +442,42 @@ ME_Model::train()
         }
 
     }
+
+    // uniform empirical expectation 
     for (int i = 0; i < _fb.Size(); i++) {
         _vee[i] /= _vs.size();
     }
     cerr << "done" << endl;
 
-    _vl.resize(_fb.Size());
-    for (int i = 0; i < _fb.Size(); i++) _vl[i] = 0.0;
+    /*
+     * ------------------------------------------------------------------------
+     */
 
+
+    /*
+     * Training
+     */
+
+    // Vector of lambda resize
+    _vl.resize(_fb.Size());
+    for (int i = 0; i < _fb.Size(); i++) _vl[i] = 0.0; // init to 0.0
+
+    // Call optimization method
     if (_optimization_method == SGD) {
         perform_SGD();
     } else {
-        perform_QUASI_NEWTON();
+        perform_QUASI_NEWTON(); 
     }
 
+    // Number of active features
     int num_active = 0;
     for (int i = 0; i < _fb.Size(); i++) {
         if (_vl[i] != 0) num_active++;
     }
     cerr << "number of active features = " << num_active << endl;
 
+
+    // Why return 0 ?
     return 0;
 }
 
