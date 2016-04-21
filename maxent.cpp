@@ -134,7 +134,11 @@ ME_Model::conditional_probability(const Sample & s,
     return max_label;
 }
 
+
+
 int ME_Model::make_feature_bag(const int cutoff) {
+
+
     int max_num_features = 0;
 
     // count the occurrences of features
@@ -145,14 +149,14 @@ int ME_Model::make_feature_bag(const int cutoff) {
 #endif
     map_type count;
 
-    // It is not necessary to use a hash map here
+    // P.N: It is not necessary to use a hash map here?
 
 
-    // If there is a cut-off
+    // count frequencies for cut-off
     if (cutoff > 0) {
         for (std::vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++) {
             for (std::vector<int>::const_iterator j = i->positive_features.begin(); j != i->positive_features.end(); j++) {
-                count[ME_Feature(i->label, *j).body()]++; // and after that?
+                count[ME_Feature(i->label, *j).body()]++;
             }
             for (std::vector<pair<int, double> >::const_iterator j = i->rvfeatures.begin(); j != i->rvfeatures.end(); j++) {
                 count[ME_Feature(i->label, j->first).body()]++;
@@ -383,6 +387,7 @@ int ME_Model::train(){
         _vs.pop_back();
     }
 
+
     // Sorting of samples.
     // Real improvment?
     sort(_vs.begin(), _vs.end()); 
@@ -408,10 +413,9 @@ int ME_Model::train(){
     cerr << "number of features = " << _fb.Size() << endl;
 
 
-
-
     /*
      * --- Empirical expectation ----------------------------------------------
+     *  It's like ObsCount
      */
     cerr << "calculating empirical expectation...";
     _vee.resize(_fb.Size()); // size of featureBag
@@ -423,31 +427,47 @@ int ME_Model::train(){
     for (int n = 0; n < (int)_vs.size(); n++) {
         const Sample * i = &_vs[n];
 
-        // binary features 
+        /*
+         * binary features:
+         * For each feature of sample i and
+         *  for each feature2ME_Feature
+         *    we see if the label of feature2ME_Feature == i-label
+         */
         for (vector<int>::const_iterator j = i->positive_features.begin(); j != i->positive_features.end(); j++){
-
             for (vector<int>::const_iterator k = _feature2mef[*j].begin(); k != _feature2mef[*j].end(); k++) {
-
                 if (_fb.Feature(*k).label() == i->label) _vee[*k] += 1.0;
-
             }
         }
 
 
-        // binary features 
+        /*
+         * real-valued features:
+         * the same
+         */
         for (vector<pair<int, double> >::const_iterator j = i->rvfeatures.begin(); j != i->rvfeatures.end(); j++) {
             for (vector<int>::const_iterator k = _feature2mef[j->first].begin(); k != _feature2mef[j->first].end(); k++) {
                 if (_fb.Feature(*k).label() == i->label) _vee[*k] += j->second;
             }
         }
-
     }
+
+    // Explore algo
+    // show obscouts in _vee
+    std::cout << "size of feature2mef : " << _feature2mef.size() << std::endl;
+    std::cout << std::endl;
+    for(int i=0; i < _vee.size(); ++i){
+        std::cout << _fb.Feature(i).label() << std::endl;
+        std::cout << _fb.Feature(i).feature() << std::endl;
+        std::cout << "::" << _vee[i] << std::endl;
+    }
+
 
     // uniform empirical expectation 
     for (int i = 0; i < _fb.Size(); i++) {
         _vee[i] /= _vs.size();
     }
     cerr << "done" << endl;
+
 
     /*
      * ------------------------------------------------------------------------
@@ -477,7 +497,7 @@ int ME_Model::train(){
     cerr << "number of active features = " << num_active << endl;
 
 
-    // Why return 0 ?
+    // Why return an integer?
     return 0;
 }
 

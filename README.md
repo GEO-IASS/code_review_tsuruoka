@@ -193,6 +193,16 @@ And we have 7 active features:
 | CLASS_B | x   |     | x   | x   | 
 
 
+After the computing of empirical expectation, also known as observations counts
+we obtain the following distribution:
+
+
+ | classes | x1  | x2  | x3  | x4  | 
+ | ---     | --- | --- | --- | --- | 
+ | 0       | 1   | 2   | 9   | 1   | 
+ | 1       | 1   |     | 1   | 3   | 
+
+
 
 
 
