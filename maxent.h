@@ -70,6 +70,7 @@ public:
 
   void add_training_sample(const ME_Sample & s);
   void explore();
+  void explore_lambda();
   int train();
   std::vector<double> classify(ME_Sample & s) const;
   bool load_from_file(const std::string & filename);
@@ -166,18 +167,37 @@ private:
 #else    
     typedef std::map<unsigned int, int> map_type;
 #endif
-    map_type mef2id;
-    std::vector<ME_Feature> id2mef;
+    map_type mef2id; //hash table
+    std::vector<ME_Feature> id2mef; // vector of ME_Feature
+
+    /*
+     * id2mef::vector
+     * <ME_Feature 0, ME_Feature 1, ..., ME_Feature n-1>
+     *
+     * mef2id::hash
+     * body_ME_Feature 0 --> id 0
+     *
+     */
+
+    /*
+     * Take a ME_Feature 
+     */
     int Put(const ME_Feature & i) {
+        // If the given ME_Feature is present, then return its id;
+        // If not, push back it into the hash table.
       map_type::const_iterator j = mef2id.find(i.body());
       if (j == mef2id.end()) {
-        int id = id2mef.size();
-        id2mef.push_back(i);
-        mef2id[i.body()] = id;
-        return id;
+        int id = id2mef.size(); // get current size
+        id2mef.push_back(i); // add the ME_Feature
+        mef2id[i.body()] = id; // set its id
+        return id; // Return id
       }
-      return j->second;
+      return j->second; // Return id
     }
+
+    /*
+     * Return the id of correspondong ME_Feature
+     */
     int Id(const ME_Feature & i) const {
       map_type::const_iterator j = mef2id.find(i.body());
       if (j == mef2id.end()) {

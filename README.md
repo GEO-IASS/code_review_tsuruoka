@@ -203,6 +203,16 @@ we obtain the following distribution:
  | 1       | 1   |     | 1   | 3   | 
 
 
+Each value are divided by the size of training set. 
+
+| classes | x1    | x2    | x3    | x4    | 
+| ---     | ---   | ---   | ---   | ---   | 
+| 0       | 0.333 | 0.666 | 3     | 0.333 | 
+| 1       | 0.333 |       | 0.333 | 1     | 
+
+
+After that, it is possible to begin the optimization of the objective.
+
 
 
 

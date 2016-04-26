@@ -31,7 +31,7 @@ int main(){
     model.add_training_sample(s3);
 
     model.explore();
-
+    model.use_SGD();
     model.train();
 
 }

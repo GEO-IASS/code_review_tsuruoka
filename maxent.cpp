@@ -93,29 +93,49 @@ ME_Model::perform_QUASI_NEWTON()
     return 0;
 }
 
-int
-ME_Model::conditional_probability(const Sample & s,
-        std::vector<double> & membp) const
-{
+int ME_Model::conditional_probability(const Sample & s, std::vector<double> & membp) const{
+
     //int num_classes = membp.size();
-    double sum = 0;
+    double sum = 0; // N.P this is the normalization constant
     int max_label = -1;
     //  double maxp = 0;
 
     vector<double> powv(_num_classes, 0.0);
+
+    // For sample S
+    std::cout << "Explore the sample s:" << std::endl;
+    for(int i = 0; i < s.positive_features.size() ; i++){
+        std::cout << "x" << s.positive_features[i]+1 << " 1 " << std::endl;
+    }
+    for(int i = 0; i < s.rvfeatures.size() ; i++){
+        //std::pair <int, double > in = s.rvfeatures[i];
+        std::cout << "x" << s.rvfeatures[i].first+1 << " " ;
+        std::cout << s.rvfeatures[i].second << std::endl;
+        //std::cout << in->second ;
+    }
+
+
+    // Here, there is an addition of lambda  
+    // Positive feature
     for (vector<int>::const_iterator j = s.positive_features.begin(); j != s.positive_features.end(); j++){
         for (vector<int>::const_iterator k = _feature2mef[*j].begin(); k != _feature2mef[*j].end(); k++) {
             powv[_fb.Feature(*k).label()] += _vl[*k];
         }
     }
+    // Real valued feature
     for (vector<pair<int, double> >::const_iterator j = s.rvfeatures.begin(); j != s.rvfeatures.end(); j++) {
         for (vector<int>::const_iterator k = _feature2mef[j->first].begin(); k != _feature2mef[j->first].end(); k++) {
             powv[_fb.Feature(*k).label()] += _vl[*k] * j->second;
         }
     }
 
+
+    // log p(y|x) 
     std::vector<double>::const_iterator pmax = max_element(powv.begin(), powv.end());
     double offset = max(0.0, *pmax - 700); // to avoid overflow
+    if(offset == 0.0) std::cout << "offset 0.0" << std::endl;
+
+    // For-loop over number of classes
     for (int label = 0; label < _num_classes; label++) {
         double pow = powv[label] - offset;
         double prod = exp(pow);
@@ -126,10 +146,14 @@ ME_Model::conditional_probability(const Sample & s,
         membp[label] = prod;
         sum += prod;
     }
+
+    // Get argmax p(y|x)
     for (int label = 0; label < _num_classes; label++) {
         membp[label] /= sum;
         if (membp[label] > membp[max_label]) max_label = label;
     }
+
+    // N.P to be sure that max_label is correctly defined
     assert(max_label >= 0);
     return max_label;
 }
@@ -137,7 +161,6 @@ ME_Model::conditional_probability(const Sample & s,
 
 
 int ME_Model::make_feature_bag(const int cutoff) {
-
 
     int max_num_features = 0;
 
@@ -148,8 +171,8 @@ int ME_Model::make_feature_bag(const int cutoff) {
     typedef std::map<unsigned int, int> map_type;
 #endif
     map_type count;
-
-    // P.N: It is not necessary to use a hash map here?
+    // It is not necessary to use a hash map here?
+    // A simple array would be okay, I guess.
 
 
     // count frequencies for cut-off
@@ -165,8 +188,7 @@ int ME_Model::make_feature_bag(const int cutoff) {
     }
 
 
-
-
+    // put _fb.Put(ME_Feature)
     int n = 0; 
     for (std::vector<Sample>::const_iterator i = _vs.begin(); i != _vs.end(); i++, n++) {
         max_num_features = max(max_num_features, (int)(i->positive_features.size()));
@@ -175,12 +197,18 @@ int ME_Model::make_feature_bag(const int cutoff) {
 
         // Treat Binary feature
         for (std::vector<int>::const_iterator j = i->positive_features.begin(); j != i->positive_features.end(); j++) {
+
+            // ME_Feature (id_label, id_feature)
             const ME_Feature feature(i->label, *j);
 
             //      if (cutoff > 0 && count[feature.body()] < cutoff) continue;
             if (cutoff > 0 && count[feature.body()] <= cutoff) continue;
-            _fb.Put(feature);
-            //      cout << i->label << "\t" << *j << "\t" << id << endl;
+            _fb.Put(feature); // allow matching with _feature2mef
+
+           /*
+            * _fb = FeatureBag 
+            */
+                  //cout << i->label << "\t" << *j << "\t" << id << endl;
             //      feature2sample[id].push_back(n);
         }
 
@@ -273,9 +301,7 @@ ME_Model::update_model_expectation()
     return logl;
 }
 
-    int
-ME_Model::train(const vector<ME_Sample> & vms)
-{
+int ME_Model::train(const vector<ME_Sample> & vms){
     _vs.clear();
     for (vector<ME_Sample>::const_iterator i = vms.begin(); i != vms.end(); i++) {
         add_training_sample(*i);
@@ -332,8 +358,8 @@ void ME_Model::explore(){
 
 }
 
-int ME_Model::train(){
 
+int ME_Model::train(){
 
     // Sanity check
     if (_l1reg > 0 && _l2reg > 0) {
@@ -453,15 +479,15 @@ int ME_Model::train(){
 
     // Explore algo
     // show obscouts in _vee
-    std::cout << "size of feature2mef : " << _feature2mef.size() << std::endl;
     std::cout << std::endl;
+    std::cout << "size of feature2mef : " << _feature2mef.size() << std::endl;
     for(int i=0; i < _vee.size(); ++i){
-        std::cout << _fb.Feature(i).label() << std::endl;
-        std::cout << _fb.Feature(i).feature() << std::endl;
-        std::cout << "::" << _vee[i] << std::endl;
+        std::cout << "fb.Feature(i).label()" << _fb.Feature(i).label() << std::endl;
+        std::cout << "fb.Feature(i).feature()" <<_fb.Feature(i).feature() << std::endl;
+        std::cout << "value::" << _vee[i] << std::endl;
     }
 
-
+    std::cout << std::endl;
     // uniform empirical expectation 
     for (int i = 0; i < _fb.Size(); i++) {
         _vee[i] /= _vs.size();
@@ -482,6 +508,8 @@ int ME_Model::train(){
     _vl.resize(_fb.Size());
     for (int i = 0; i < _fb.Size(); i++) _vl[i] = 0.0; // init to 0.0
 
+    explore_lambda();
+
     // Call optimization method
     if (_optimization_method == SGD) {
         perform_SGD();
@@ -496,10 +524,19 @@ int ME_Model::train(){
     }
     cerr << "number of active features = " << num_active << endl;
 
-
-    // Why return an integer?
+    // Why return a constant?
     return 0;
 }
+
+
+void ME_Model::explore_lambda(){
+
+    std::cout << "Explore _vl:" << std::endl;
+    for(int i=0;i < _vl.size(); i++){
+        std::cout << _vl[i] << std::endl;
+    }
+}
+
 
     void
 ME_Model::get_features(list< pair< pair<string, string>, double> > & fl)
@@ -574,16 +611,22 @@ ME_Model::load_from_file(const string & filename)
     return true;
 }
 
-    void
-ME_Model::init_feature2mef()
-{
+void ME_Model::init_feature2mef(){
     _feature2mef.clear();
+
+    // _feature2mef <std::vector<std::vector<int>>>
+    // each feature of index i has a vector of int wich
+    // represents the id of corresponding ME_Feature
     for (int i = 0; i < _featurename_bag.Size(); i++) {
         vector<int> vi;
+
         for (int k = 0; k < _num_classes; k++) {
+
             int id = _fb.Id(ME_Feature(k, i));
             if (id >= 0) vi.push_back(id);
+
         }
+
         _feature2mef.push_back(vi);
     }
 }
@@ -660,6 +703,7 @@ int ME_Model::classify(const Sample & nbs, vector<double> & membp) const{
     conditional_probability(nbs, membp);
     int max_label = 0;
     double max = 0.0;
+    // N.P. Code not necessary because already done into conditional_probability
     for (int i = 0; i < (int)membp.size(); i++) {
         //    cout << membp[i] << " ";
         if (membp[i] > max) { max_label = i; max = membp[i]; }
