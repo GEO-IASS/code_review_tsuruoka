@@ -1,3 +1,6 @@
+
+__This document is a work in progress__
+
 # MaxEnt source code review
 
 Source code review of Tsuruoka's C++ library for maximum entropy classification (see [http://www.nactem.ac.uk/tsuruoka/maxent/](http://www.nactem.ac.uk/tsuruoka/maxent/)).
@@ -65,7 +68,7 @@ The class `ME_Model` is the core of the library. This is reflected in the space 
 
 ### `ME_Sample` and  `Sample`
 
-The structure `ME_Sample` records the observations. Each `ME_Sample` have its  own features. There are two kinds of features: binary (`vector<string>`) and real-valued (`vector<pair<string, double>>`) features. 
+The structure `ME_Sample` records the observations. Each `ME_Sample` have its  own features. There are two kinds of features: binary (`vector<string>`) and real-valued (`vector<pair<string, double>>`) features.
 
 When the `ME_Sample` records are added to the training set (`void add_training_sample(const ME_Sample & mes)`), they are transformed in `Sample`: a distinction is made here between the _external observations_ (`ME_Sample`) and the _internal representation of those observations_ (`Sample`), inaccessible outside the `ME_Model`.
 
@@ -90,7 +93,7 @@ As the comments indicate,  the program will be a bit slower. This is expected si
 ```C++
 #ifdef USE_HASH_MAP
     typedef __gnu_cxx::hash_map<std::string, int, hashfun_str> map_type;
-#else    
+#else
     typedef std::map<std::string, int> map_type;
 #endif
 ```
@@ -157,62 +160,61 @@ We can imagine a simple example.
 
 ```C++
     ME_Sample s1("CLASS_A");
-    s1.add_feature("x1");             
-    s1.add_feature("x2"); 
-    s1.add_feature("x3", 4.0);  
+    s1.add_feature("x1");
+    s1.add_feature("x2");
+    s1.add_feature("x3", 4.0);
 
     ME_Sample s2("CLASS_A");
-    s2.add_feature("x2");             
-    s2.add_feature("x3", 5.0);  
-    s2.add_feature("x4", 1.0); 
+    s2.add_feature("x2");
+    s2.add_feature("x3", 5.0);
+    s2.add_feature("x4", 1.0);
 
     ME_Sample s3("CLASS_B");
-    s3.add_feature("x1");             
-    s3.add_feature("x3", 1.0);  
-    s3.add_feature("x4", 3.0); 
+    s3.add_feature("x1");
+    s3.add_feature("x3", 1.0);
+    s3.add_feature("x4", 3.0);
 
 ```
 
 
 At the beginning, our training set has the following form:
 
-| samples | x1  | x2  | x3  | x4  | y       | 
-| ---     | --- | --- | --- | --- | ---     | 
-| s1      | 1   | 1   | 4.0 |     | CLASS_A | 
-| s2      |     | 1   | 5.0 | 1.0 | CLASS_A | 
-| s3      | 1   |     | 1.0 | 3.0 | CLASS_B | 
+| samples | x1  | x2  | x3  | x4  | y       |
+| ---     | --- | --- | --- | --- | ---     |
+| s1      | 1   | 1   | 4.0 |     | CLASS_A |
+| s2      |     | 1   | 5.0 | 1.0 | CLASS_A |
+| s3      | 1   |     | 1.0 | 3.0 | CLASS_B |
 
 
 
 And we have 7 active features:
 
 
-| classes | x1  | x2  | x3  | x4  | 
-| ---     | --- | --- | --- | --- | 
-| CLASS_A | x   | x   | x   | x   | 
-| CLASS_B | x   |     | x   | x   | 
+| classes | x1  | x2  | x3  | x4  |
+| ---     | --- | --- | --- | --- |
+| CLASS_A | x   | x   | x   | x   |
+| CLASS_B | x   |     | x   | x   |
 
 
 After the computing of empirical expectation, also known as observations counts
 we obtain the following distribution:
 
 
- | classes | x1  | x2  | x3  | x4  | 
- | ---     | --- | --- | --- | --- | 
- | 0       | 1   | 2   | 9   | 1   | 
- | 1       | 1   |     | 1   | 3   | 
+| classes | x1  | x2  | x3  | x4  |
+| ---     | --- | --- | --- | --- |
+| 0       | 1   | 2   | 9   | 1   |
+| 1       | 1   |     | 1   | 3   |
 
 
-Each value are divided by the size of training set. 
+Each value are divided by the size of training set.
 
-| classes | x1    | x2    | x3    | x4    | 
-| ---     | ---   | ---   | ---   | ---   | 
-| 0       | 0.333 | 0.666 | 3     | 0.333 | 
-| 1       | 0.333 |       | 0.333 | 1     | 
+| classes | x1    | x2    | x3    | x4    |
+| ---     | ---   | ---   | ---   | ---   |
+| 0       | 0.333 | 0.666 | 3     | 0.333 |
+| 1       | 0.333 |       | 0.333 | 1     |
 
 
-After that, it is possible to begin the optimization of the objective.
-
+After that, we can start to optimizing the objective.
 
 
 
@@ -221,10 +223,10 @@ After that, it is possible to begin the optimization of the objective.
 Two data structures are involved in `ME_FeatureBag`:
 
  - Hash implementation with pairs `<unsigned int, int>` called `mef2id`
- 
+
  - Standard vector of `ME_Features`, called  `id2mef`.
 
-Note that `mef` probably stands for `ME_Feature`. 
+Note that `mef` probably stands for `ME_Feature`.
 
 Two functions are defined for FeatureBag:
 
@@ -248,19 +250,3 @@ int Put(const ME_Feature & i) {
 ## Optimization methods
 
 By default, this library use 'LBFGS' to optimize the objective.
-
-### LBFGS
-
-
-
-
-
-## Example of postagging
-
-
-## References
-
-
- - Stroustrup, B. (1997). The C++ Programming Language. Third edition. Pearson Education India.
-
-
