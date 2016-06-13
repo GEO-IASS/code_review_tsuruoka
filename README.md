@@ -154,7 +154,34 @@ The label identifier is stored on the first 8 bits, and the 24 remaining are ded
 Then, in this implementation, we can have, at most, 256 labels and 2^24 features.
 
 
-### Example
+### FeatureBag
+
+Two data structures are involved in `ME_FeatureBag`:
+
+ - Hash implementation with pairs `<unsigned int, int>` called `mef2id`
+
+ - Standard vector of `ME_Features`, called  `id2mef`.
+
+Note that `mef` probably stands for `ME_Feature`.
+
+Two functions are defined for FeatureBag:
+
+ - The put function:
+
+```C++
+int Put(const ME_Feature & i) {
+  map_type::const_iterator j = mef2id.find(i.body());
+  if (j == mef2id.end()) {
+    int id = id2mef.size();
+    id2mef.push_back(i);
+    mef2id[i.body()] = id;
+    return id;
+  }
+  return j->second;
+}
+```
+
+## Example
 
 We can imagine a simple example.
 
@@ -214,39 +241,8 @@ Each value are divided by the size of training set.
 | 1       | 0.333 |       | 0.333 | 1     |
 
 
-After that, we can start to optimizing the objective.
-
-
-
-### FeatureBag
-
-Two data structures are involved in `ME_FeatureBag`:
-
- - Hash implementation with pairs `<unsigned int, int>` called `mef2id`
-
- - Standard vector of `ME_Features`, called  `id2mef`.
-
-Note that `mef` probably stands for `ME_Feature`.
-
-Two functions are defined for FeatureBag:
-
- - The put function:
-
-```C++
-int Put(const ME_Feature & i) {
-  map_type::const_iterator j = mef2id.find(i.body());
-  if (j == mef2id.end()) {
-    int id = id2mef.size();
-    id2mef.push_back(i);
-    mef2id[i.body()] = id;
-    return id;
-  }
-  return j->second;
-}
-```
-
 
 
 ## Optimization methods
 
-By default, this library use 'LBFGS' to optimize the objective.
+By default, this library uses LBFGS to optimize the objective.
