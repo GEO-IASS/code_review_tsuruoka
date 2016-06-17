@@ -24,7 +24,7 @@ Using [Rexdep](https://github.com/itchyny/rexdep), we can obtain the following d
 
 ![Dependencies](https://raw.githubusercontent.com/fauconnier/code_review_tsuruoka/master/resources/dependencies.png)
 
-The __core of the library__ are the header `maxent.h`, and its implementation `maxent.cpp`. In this core, the fundamental structures and functions of the learning task are defined (training set struct, functions for computing of objective, etc.). The following section  will discuss some of these aspects.
+The __core of the library__ are the header `maxent.h`, and its implementation `maxent.cpp`. In this core, the fundamental structures and functions of the learning task are defined (training set, functions for computing of objective, etc.). The following section  will discuss some of these aspects.
 
 Besides that, three __optimization methods__ are proposed:
 
@@ -44,7 +44,7 @@ Two __classification examples__ are proposed:
 
 The `mathvec.h` describes the class `Vec` which extends the possibilities of `vector<double>`:  the operators (e.g. `<<`, binary `+`, etc.) are overloaded and some facilities are in place for computing the dot product and the vector projection. Those elements are used in `lbfgs.cpp`, `owlqn.cpp` and `maxent.h`.
 
-In this case, the optimization aspect is taken into account. For instance, the dot production function is [inlined](https://en.wikipedia.org/wiki/Inline_function), in order to save CPU registers and increase the efficience of operation.
+In this case, the optimization aspect is taken into account. For instance, the dot production function is [inlined](https://en.wikipedia.org/wiki/Inline_function), in order to save CPU registers and increase the efficiency of the operation.
 
 ```C++
 inline double dot_product(const Vec & a, const Vec & b)
@@ -79,7 +79,7 @@ During this transformation, since it's easier to handle integers in place of str
 
 ### Hash implementation
 
-By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History). However, this is now depreciated. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
+By default, pre-processor instructions in `maxent.h` call the header `ext/hash_map`. This implementation of hash table was [one the first largely used](https://en.wikipedia.org/wiki/Unordered_associative_containers_%28C%2B%2B%29#History). However, this is now deprecated. Thus, compiling the project using this kind of hash lead to a warning with a C++11 compiler. As indicated in the source, the best way to skip the warning is to comment the macro which defines `USE_HASH_MAP`.
 
 ```C++
 #define USE_HASH_MAP  // if you encounter errors with hash, try commenting out this line.  (the program will be a bit slower, though)
@@ -131,7 +131,7 @@ As we can see, this hash function uses extensively low-level bitwise operations,
 
 The function `add_training_sample(const ME_Sample & mes)` transforms a `ME_Sample` into a `Sample`. The samples are, internally to each model, stored into a  vector of training samples (`std::vector<Sample> _vs`). The string representing the feature of the `ME_Sample` are transformed into their corresponding integer.
 
-Differents objects are proposed:
+Different objects are proposed:
 
 ```C++
   std::vector<Sample> _vs; // vector of training_samples
